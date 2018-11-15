@@ -7,7 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var logLevel = logrus.InfoLevel
+var logLevel = logrus.DebugLevel
 
 type logFormatter struct {
 	name string

@@ -1,17 +1,17 @@
 package service
 
 import (
-	"bytes"
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 
+	jsonclient "github.com/rameshpolishetti/mlca/internal/core/common/restclient"
 	"github.com/rameshpolishetti/mlca/logger"
 )
 
 var log = logger.GetLogger("registry-service")
 
+// RegistryProxy rigistry
 type RegistryProxy struct {
 	name       string
 	baseURL    *url.URL
@@ -26,6 +26,7 @@ type RegistryProxy struct {
 	clusterId string
 }
 
+// NewRegistryProxyService creates new registry proxy
 func NewRegistryProxyService(name string, registry string) *RegistryProxy {
 	rp := &RegistryProxy{
 		name: name,
@@ -39,6 +40,7 @@ func NewRegistryProxyService(name string, registry string) *RegistryProxy {
 	return rp
 }
 
+// Register rigister with rigistry
 func (rp *RegistryProxy) Register() bool {
 	// check whether the registry is ready
 	if !rp.IsReady() {
@@ -47,7 +49,7 @@ func (rp *RegistryProxy) Register() bool {
 	}
 
 	registryPath := rp.baseURL.String() + "/clusters/Mashery/zones/Local/" + rp.name
-	log.Infoln("POST request to: ", registryPath)
+	log.Infoln("Registering")
 	/**
 	 * create registry payload
 	 * {
@@ -59,29 +61,17 @@ func (rp *RegistryProxy) Register() bool {
 	 * }
 	 */
 	payloadMap := map[string]interface{}{
-		"name":      "microgateway",
+		"name":      rp.name,
 		"host":      "10.97.90.65",
 		"agentPort": 21780,
 		"status":    "registering",
 	}
-	payloadBytes, err := json.Marshal(payloadMap)
-	if err != nil {
-		log.Errorln(err)
-	}
-	log.Debugf("request payload: %s", payloadBytes)
 
-	res, err := rp.httpClient.Post(registryPath, "application/json", bytes.NewBuffer(payloadBytes))
+	res, err := jsonclient.Post(registryPath, payloadMap)
 	if err != nil {
-		log.Errorln(err)
 		return false
 	}
-	defer res.Body.Close()
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		log.Errorln(err)
-		return false
-	}
-	log.Infof("Response form registry: %s \n", body)
+	log.Infof("Response form registry: %s \n", res)
 	/* sample response
 	{
 		"registrationTime" : "11-317-18 15:46:53.914+0530",
@@ -101,7 +91,7 @@ func (rp *RegistryProxy) Register() bool {
 		Status    string `json:status`
 	}
 	respObj := &RegistryResp{}
-	err = json.Unmarshal([]byte(body), respObj)
+	err = json.Unmarshal(res, respObj)
 	if err != nil {
 		log.Errorln(err)
 		return false
@@ -116,6 +106,7 @@ func (rp *RegistryProxy) Register() bool {
 	return false
 }
 
+// IsReady return whether registry is ready
 func (rp *RegistryProxy) IsReady() bool {
 	if rp.isReady {
 		return true
@@ -123,15 +114,8 @@ func (rp *RegistryProxy) IsReady() bool {
 
 	statusPath := rp.baseURL.String() + "/status"
 
-	res, err := rp.httpClient.Get(statusPath)
+	body, err := jsonclient.Get(statusPath)
 	if err != nil {
-		log.Errorln(err)
-		return false
-	}
-	defer res.Body.Close()
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		log.Errorln(err)
 		return false
 	}
 
@@ -152,6 +136,7 @@ func (rp *RegistryProxy) IsReady() bool {
 	return rp.isReady
 }
 
+// UpdateStatus updates status with registry
 func (rp *RegistryProxy) UpdateStatus(status string) bool {
 	// check whether the registry is ready
 	if !rp.IsReady() {
@@ -182,30 +167,12 @@ func (rp *RegistryProxy) UpdateStatus(status string) bool {
 	payloadMap := map[string]interface{}{
 		"status": status,
 	}
-	payloadBytes, err := json.Marshal(payloadMap)
-	if err != nil {
-		log.Errorln(err)
-	}
-	log.Debugf("request payload: %s", payloadBytes)
 
-	req, err := http.NewRequest(http.MethodPut, statusPath, bytes.NewBuffer(payloadBytes))
+	res, err := jsonclient.Put(statusPath, payloadMap)
 	if err != nil {
-		log.Errorln(err)
 		return false
 	}
-	// res, err := rp.httpClient.Post(statusPath, "application/json", bytes.NewBuffer(payloadBytes))
-	res, err := rp.httpClient.Do(req)
-	if err != nil {
-		log.Errorln(err)
-		return false
-	}
-	defer res.Body.Close()
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		log.Errorln(err)
-		return false
-	}
-	log.Infof("Updated status in registry to %s - Response from registry: %s", status, body)
+	log.Infof("Updated status in registry to %s - Response from registry: %s", status, res)
 
 	return true
 }
