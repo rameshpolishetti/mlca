@@ -1,0 +1,11 @@
+{
+    "name" : "myapp",
+    "inboxes": {
+      "registry":"localhost:21180"
+    },
+    "transportSettings": {
+      "scheme": "http",
+      "port": 21780
+    }
+  }
+  

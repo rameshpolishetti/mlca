@@ -1,0 +1,7 @@
+# vscode
+.vscode/*
+
+# GO
+bin/
+**/vendor/src/
+**/vendor/manifest
