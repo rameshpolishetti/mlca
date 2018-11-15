@@ -1,4 +1,4 @@
-package cagent
+package container
 
 import (
 	"context"
@@ -13,7 +13,8 @@ import (
 	"github.com/rameshpolishetti/mlca/logger"
 
 	"github.com/gorilla/mux"
-	"github.com/rameshpolishetti/mlca/internal/service"
+	"github.com/rameshpolishetti/mlca/internal/core/component"
+	"github.com/rameshpolishetti/mlca/internal/core/service"
 
 	"github.com/looplab/fsm"
 )
@@ -28,10 +29,12 @@ type ContainerAgent struct {
 	Name       string
 	Port       int
 	FSM        *fsm.FSM
+	Component  component.Component
 	RegService *service.RegistryProxy
 }
 
 func NewContainerAgent(name string, registry string, port int) *ContainerAgent {
+
 	a := &ContainerAgent{
 		Name: name,
 		Port: port,
@@ -64,6 +67,9 @@ func NewContainerAgent(name string, registry string, port int) *ContainerAgent {
 	)
 
 	// fmt.Println(fsm.Visualize(a.FSM))
+
+	// Init component
+	a.Component = component.NewMicrogatewayComponent(name)
 
 	// Init registry proxy service
 	a.RegService = service.NewRegistryProxyService(name, registry)
@@ -166,6 +172,11 @@ func (ca *ContainerAgent) initialize() bool {
 	// init
 	// bootup() -> register -> ConfigurationRegistryService -> register()
 
+	// bootup component
+	if !ca.Component.Bootup() {
+		return false
+	}
+
 	// register
 	if ca.RegService.Register() {
 		log.Infoln("Registration SUCCESS")
@@ -185,6 +196,11 @@ func (ca *ContainerAgent) initialize() bool {
 
 func (ca *ContainerAgent) resolveDependencies() bool {
 	// resolve
+	if !ca.Component.BuildConfiguration() {
+		return false
+	}
+
+	// update state
 	err := ca.FSM.Event("resolveDependencies")
 	if err != nil {
 		log.Errorln(err)
@@ -195,13 +211,15 @@ func (ca *ContainerAgent) resolveDependencies() bool {
 
 func (ca *ContainerAgent) activate() bool {
 	// activate
+	if !ca.Component.LaunchComponent() {
+		return false
+	}
+	// update state
 	err := ca.FSM.Event("activate")
 	if err != nil {
 		log.Errorln(err)
 		return false
 	}
-	// Run microgateway
-	startMicrogateway()
 
 	return true
 }
@@ -247,6 +265,10 @@ func startMicrogateway() {
 
 func (ca *ContainerAgent) standby() bool {
 	// standby
+	if !ca.Component.PrepareForActive() {
+		return false
+	}
+	// update state
 	err := ca.FSM.Event("standby")
 	if err != nil {
 		log.Errorln(err)
@@ -257,6 +279,10 @@ func (ca *ContainerAgent) standby() bool {
 
 func (ca *ContainerAgent) monitor() bool {
 	// monitor
+	if !ca.Component.WatchComponent() {
+		return false
+	}
+	// update state
 	err := ca.FSM.Event("monitor")
 	if err != nil && err.Error() != "no transition" {
 		log.Errorln(err)

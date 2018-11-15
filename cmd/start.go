@@ -1,9 +1,9 @@
 package cmd
 
 import (
+	"github.com/rameshpolishetti/mlca/internal/core/container"
 	"github.com/rameshpolishetti/mlca/logger"
 
-	"github.com/rameshpolishetti/mlca/internal/cagent"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -44,6 +44,6 @@ func run(cmd *cobra.Command, args []string) {
 
 	log.Infof("Start the container agent with the container - %s", containerName)
 
-	ca := cagent.NewContainerAgent(containerName, registry, caPort)
+	ca := container.NewContainerAgent(containerName, registry, caPort)
 	ca.Start()
 }
