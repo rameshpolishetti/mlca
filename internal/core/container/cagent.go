@@ -13,6 +13,7 @@ import (
 	"github.com/rameshpolishetti/mlca/logger"
 
 	"github.com/gorilla/mux"
+	"github.com/rameshpolishetti/mlca/internal/core/common/config"
 	"github.com/rameshpolishetti/mlca/internal/core/component"
 	"github.com/rameshpolishetti/mlca/internal/core/service"
 
@@ -27,14 +28,14 @@ const (
 
 // ContainerAgent container agent
 type ContainerAgent struct {
-	Config     Config
+	Config     config.ContainerConfig
 	FSM        *fsm.FSM
 	Component  component.Component
 	RegService *service.RegistryProxy
 }
 
 // NewContainerAgent creates new container agent
-func NewContainerAgent(cConfig Config) *ContainerAgent {
+func NewContainerAgent(cConfig config.ContainerConfig) *ContainerAgent {
 
 	a := &ContainerAgent{
 		Config: cConfig,
@@ -72,8 +73,7 @@ func NewContainerAgent(cConfig Config) *ContainerAgent {
 	a.Component = component.NewMicrogatewayComponent(cConfig.Name)
 
 	// Init registry proxy service
-	registry := cConfig.Inboxes["registry"]
-	a.RegService = service.NewRegistryProxyService(cConfig.Name, registry)
+	a.RegService = service.NewRegistryProxyService(cConfig)
 
 	return a
 }

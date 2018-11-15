@@ -1,7 +1,7 @@
-package container
+package config
 
-// Config container configuration
-type Config struct {
+// ContainerConfig container configuration
+type ContainerConfig struct {
 	Name              string            `json:"name"`
 	Domain            string            `json:"domain"`
 	Cluster           string            `json:"cluster"`

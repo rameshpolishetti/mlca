@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/rameshpolishetti/mlca/internal/core/common/config"
 	jsonclient "github.com/rameshpolishetti/mlca/internal/core/common/restclient"
 	"github.com/rameshpolishetti/mlca/logger"
 )
@@ -13,7 +14,7 @@ var log = logger.GetLogger("registry-service")
 
 // RegistryProxy rigistry
 type RegistryProxy struct {
-	name       string
+	cConfig    config.ContainerConfig
 	baseURL    *url.URL
 	httpClient *http.Client
 
@@ -27,9 +28,10 @@ type RegistryProxy struct {
 }
 
 // NewRegistryProxyService creates new registry proxy
-func NewRegistryProxyService(name string, registry string) *RegistryProxy {
+func NewRegistryProxyService(cCfg config.ContainerConfig) *RegistryProxy {
+	registry := cCfg.Inboxes["registry"]
 	rp := &RegistryProxy{
-		name: name,
+		cConfig: cCfg,
 		baseURL: &url.URL{
 			Scheme: "http",
 			Host:   registry,
@@ -48,7 +50,7 @@ func (rp *RegistryProxy) Register() bool {
 		return false
 	}
 
-	registryPath := rp.baseURL.String() + "/clusters/Mashery/zones/Local/" + rp.name
+	registryPath := rp.baseURL.String() + "/clusters/Mashery/zones/Local/" + rp.cConfig.Name
 	log.Infoln("Registering")
 	/**
 	 * create registry payload
@@ -61,9 +63,9 @@ func (rp *RegistryProxy) Register() bool {
 	 * }
 	 */
 	payloadMap := map[string]interface{}{
-		"name":      rp.name,
-		"host":      "10.97.90.65",
-		"agentPort": 21780,
+		"name":      rp.cConfig.Name,
+		"host":      rp.cConfig.TransportSettings.IP,
+		"agentPort": rp.cConfig.TransportSettings.Port,
 		"status":    "registering",
 	}
 
@@ -160,7 +162,7 @@ func (rp *RegistryProxy) UpdateStatus(status string) bool {
 	statusPath := rp.baseURL.String() +
 		"/clusters/" + rp.clusterId +
 		"/zones/" + rp.zoneId +
-		"/" + rp.name + "/" + rp.tmgcId +
+		"/" + rp.cConfig.Name + "/" + rp.tmgcId +
 		"/status"
 	log.Infoln("PUT request to: ", statusPath)
 

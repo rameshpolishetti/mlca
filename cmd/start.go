@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/rameshpolishetti/mlca/internal/core/common/config"
 	"github.com/rameshpolishetti/mlca/internal/core/container"
 	"github.com/rameshpolishetti/mlca/logger"
 
@@ -40,7 +41,7 @@ var startCmd = &cobra.Command{
 func run(cmd *cobra.Command, args []string) {
 
 	// load container configuration
-	var cConfig container.Config
+	var cConfig config.ContainerConfig
 	err := viper.Unmarshal(&cConfig)
 	if err != nil {
 		log.Errorf("unable to load container configuration")
