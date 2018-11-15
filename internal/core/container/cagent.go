@@ -25,19 +25,19 @@ const (
 	HeartBeatInterval = 2000 * time.Millisecond
 )
 
+// ContainerAgent container agent
 type ContainerAgent struct {
-	Name       string
-	Port       int
+	Config     Config
 	FSM        *fsm.FSM
 	Component  component.Component
 	RegService *service.RegistryProxy
 }
 
-func NewContainerAgent(name string, registry string, port int) *ContainerAgent {
+// NewContainerAgent creates new container agent
+func NewContainerAgent(cConfig Config) *ContainerAgent {
 
 	a := &ContainerAgent{
-		Name: name,
-		Port: port,
+		Config: cConfig,
 	}
 
 	/*
@@ -69,10 +69,11 @@ func NewContainerAgent(name string, registry string, port int) *ContainerAgent {
 	// fmt.Println(fsm.Visualize(a.FSM))
 
 	// Init component
-	a.Component = component.NewMicrogatewayComponent(name)
+	a.Component = component.NewMicrogatewayComponent(cConfig.Name)
 
 	// Init registry proxy service
-	a.RegService = service.NewRegistryProxyService(name, registry)
+	registry := cConfig.Inboxes["registry"]
+	a.RegService = service.NewRegistryProxyService(cConfig.Name, registry)
 
 	return a
 }
@@ -81,14 +82,15 @@ func (ca *ContainerAgent) enterState(e *fsm.Event) {
 	log.Infof("%s -> %s", e.Src, e.Dst)
 }
 
+// Start starts container agent
 func (ca *ContainerAgent) Start() {
 
 	// start http server
 	router := mux.NewRouter()
-	pathStatus := fmt.Sprintf("/%s/status", ca.Name)
+	pathStatus := fmt.Sprintf("/%s/status", ca.Config.Name)
 	router.HandleFunc(pathStatus, ca.getStatus).Methods("GET")
 	httpServer := &http.Server{
-		Addr:    fmt.Sprintf(":%v", ca.Port),
+		Addr:    fmt.Sprintf(":%v", ca.Config.TransportSettings.Port),
 		Handler: router,
 	}
 	go func() {
@@ -312,7 +314,7 @@ type ModelCA struct {
 // REST API
 func (ca *ContainerAgent) getStatus(w http.ResponseWriter, r *http.Request) {
 	mca := &ModelCA{
-		Name:   ca.Name,
+		Name:   ca.Config.Name,
 		Status: ca.FSM.Current(),
 	}
 

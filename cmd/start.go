@@ -38,12 +38,16 @@ var startCmd = &cobra.Command{
 }
 
 func run(cmd *cobra.Command, args []string) {
-	containerName := viper.GetString("name")
-	registry := viper.GetString("inboxes.registry")
-	caPort := viper.GetInt("transportSettings.port")
 
-	log.Infof("Start the container agent with the container - %s", containerName)
+	// load container configuration
+	var cConfig container.Config
+	err := viper.Unmarshal(&cConfig)
+	if err != nil {
+		log.Errorf("unable to load container configuration")
+	}
 
-	ca := container.NewContainerAgent(containerName, registry, caPort)
+	log.Infof("Start the container [%s]", cConfig.Name)
+
+	ca := container.NewContainerAgent(cConfig)
 	ca.Start()
 }
