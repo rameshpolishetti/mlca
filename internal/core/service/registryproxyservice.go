@@ -2,8 +2,6 @@ package service
 
 import (
 	"encoding/json"
-	"net/http"
-	"net/url"
 
 	"github.com/rameshpolishetti/mlca/internal/core/common/config"
 	jsonclient "github.com/rameshpolishetti/mlca/internal/core/common/restclient"
@@ -15,8 +13,7 @@ var log = logger.GetLogger("registry-service")
 // RegistryProxy rigistry
 type RegistryProxy struct {
 	cConfig    config.ContainerConfig
-	baseURL    *url.URL
-	httpClient *http.Client
+	jsonClient *jsonclient.JSONClient
 
 	// registry status
 	isReady bool
@@ -30,14 +27,10 @@ type RegistryProxy struct {
 // NewRegistryProxyService creates new registry proxy
 func NewRegistryProxyService(cCfg config.ContainerConfig) *RegistryProxy {
 	registry := cCfg.Inboxes["registry"]
+	registryContext := "/registry/rest/v1"
 	rp := &RegistryProxy{
-		cConfig: cCfg,
-		baseURL: &url.URL{
-			Scheme: "http",
-			Host:   registry,
-			Path:   "registry/rest/v1",
-		},
-		httpClient: &http.Client{},
+		cConfig:    cCfg,
+		jsonClient: jsonclient.New(registry, registryContext),
 	}
 	return rp
 }
@@ -50,7 +43,7 @@ func (rp *RegistryProxy) Register() bool {
 		return false
 	}
 
-	registryPath := rp.baseURL.String() + "/clusters/Mashery/zones/Local/" + rp.cConfig.Name
+	registerPath := "/clusters/" + rp.cConfig.Cluster + "/zones/" + rp.cConfig.Zone + "/" + rp.cConfig.Name
 	log.Infoln("Registering")
 	/**
 	 * create registry payload
@@ -69,7 +62,7 @@ func (rp *RegistryProxy) Register() bool {
 		"status":    "registering",
 	}
 
-	res, err := jsonclient.Post(registryPath, payloadMap)
+	res, err := rp.jsonClient.Post(registerPath, payloadMap)
 	if err != nil {
 		return false
 	}
@@ -114,9 +107,9 @@ func (rp *RegistryProxy) IsReady() bool {
 		return true
 	}
 
-	statusPath := rp.baseURL.String() + "/status"
+	statusPath := "/status"
 
-	body, err := jsonclient.Get(statusPath)
+	body, err := rp.jsonClient.Get(statusPath)
 	if err != nil {
 		return false
 	}
@@ -159,18 +152,17 @@ func (rp *RegistryProxy) UpdateStatus(status string) bool {
 				"status" : "UNSATISFIED"
 			}
 	*/
-	statusPath := rp.baseURL.String() +
-		"/clusters/" + rp.clusterId +
+	updateStatusPath := "/clusters/" + rp.clusterId +
 		"/zones/" + rp.zoneId +
 		"/" + rp.cConfig.Name + "/" + rp.tmgcId +
 		"/status"
-	log.Infoln("PUT request to: ", statusPath)
+	log.Infoln("PUT request to: ", updateStatusPath)
 
 	payloadMap := map[string]interface{}{
 		"status": status,
 	}
 
-	res, err := jsonclient.Put(statusPath, payloadMap)
+	res, err := rp.jsonClient.Put(updateStatusPath, payloadMap)
 	if err != nil {
 		return false
 	}
