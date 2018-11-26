@@ -12,6 +12,8 @@ type ContainerConfig struct {
 	Inboxes           map[string]string `json:"inboxes"`
 	TransportSettings TransportSettings `json:"transportSettings"`
 	Components        []Component       `json:"components"`
+
+	IP string
 }
 
 // Component component configuration

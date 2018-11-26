@@ -1,7 +1,11 @@
 package cmd
 
 import (
+	"encoding/json"
+	"os"
+
 	"github.com/rameshpolishetti/mlca/internal/core/common/config"
+	"github.com/rameshpolishetti/mlca/internal/core/common/util"
 	"github.com/rameshpolishetti/mlca/internal/core/container"
 	"github.com/rameshpolishetti/mlca/logger"
 
@@ -47,7 +51,16 @@ func run(cmd *cobra.Command, args []string) {
 		log.Errorf("unable to load container configuration")
 	}
 
-	log.Infof("Start the container [%s]", cConfig.Name)
+	// load host details
+	cConfig.IP = util.LookupHostIP()
+	hName, err := os.Hostname()
+	if err != nil {
+		log.Errorf("unable to load host details")
+	}
+	cConfig.Node = hName
+
+	cfgString, _ := json.MarshalIndent(cConfig, "", " ")
+	log.Infof("Start the container [%s] with configuration: %s", cConfig.Name, cfgString)
 
 	ca := container.NewContainerAgent(cConfig)
 	ca.Start()

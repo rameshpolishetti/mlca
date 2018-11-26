@@ -57,7 +57,7 @@ func (rp *RegistryProxy) Register() bool {
 	 */
 	payloadMap := map[string]interface{}{
 		"name":      rp.cConfig.Name,
-		"host":      rp.cConfig.TransportSettings.IP,
+		"host":      rp.cConfig.IP,
 		"agentPort": rp.cConfig.TransportSettings.Port,
 		"status":    "registering",
 	}
