@@ -17,7 +17,14 @@ type ContainerConfig struct {
 }
 
 // Component component configuration
-type Component map[string]string
+type Component struct {
+	Name      string `json:"name"`
+	Type      string `json:"type"`
+	Qualifier string `json:"qualifier"`
+	Script    string `json:"script"`
+	Service   string `json:"service"`
+	Factory   string `json:"factory"`
+}
 
 // TransportSettings transport configuration
 type TransportSettings struct {
