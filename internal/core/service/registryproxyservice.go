@@ -12,7 +12,7 @@ var log = logger.GetLogger("registry-service")
 
 // RegistryProxy rigistry
 type RegistryProxy struct {
-	cConfig    config.ContainerConfig
+	cConfig    config.ContainerDaemon
 	jsonClient *jsonclient.JSONClient
 
 	// registry status
@@ -25,7 +25,7 @@ type RegistryProxy struct {
 }
 
 // NewRegistryProxyService creates new registry proxy
-func NewRegistryProxyService(cCfg config.ContainerConfig) *RegistryProxy {
+func NewRegistryProxyService(cCfg config.ContainerDaemon) *RegistryProxy {
 	registry := cCfg.Inboxes["registry"]
 	registryContext := "/registry/rest/v1"
 	rp := &RegistryProxy{

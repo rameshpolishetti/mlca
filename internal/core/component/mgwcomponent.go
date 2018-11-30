@@ -7,6 +7,7 @@ import (
 	"github.com/project-flogo/core/engine"
 	"github.com/project-flogo/microgateway"
 	microapi "github.com/project-flogo/microgateway/api"
+	"github.com/rameshpolishetti/mlca/internal/core/common/config"
 	"github.com/rameshpolishetti/mlca/logger"
 )
 
@@ -14,15 +15,17 @@ var log = logger.GetLogger("tm")
 
 // MicrogatewayComponent holds Microgateway component
 type MicrogatewayComponent struct {
-	Name string
+	// Name string
+	config.ManagedComponent
 }
 
 // NewMicrogatewayComponent creates new MicrogatewayComponent component
 func NewMicrogatewayComponent(name string) Component {
 	log.Infoln("init")
 	mgwComponent := &MicrogatewayComponent{
-		Name: name,
+	// Name: name,
 	}
+	mgwComponent.Name = name
 
 	return mgwComponent
 }
@@ -44,7 +47,7 @@ func (mgwc *MicrogatewayComponent) LaunchComponent() bool {
 
 func (mgwc *MicrogatewayComponent) PrepareForActive() bool {
 	log.Infoln("PrepareForActive")
-	startMicrogateway()
+	// startMicrogateway()
 	return true
 }
 

@@ -1,13 +1,28 @@
 {
-  "name": "myapp",
-  "domain": "TIBCO",
-  "cluster": "Mashery",
-  "zone": "Local",
+  "name" : "myapp",
+  "domain" : "TIBCO",
+  "cluster" : "Mashery Local 5",
+  "zone": "Local Zone",
+  "node" : "UNKNOWN",
+  "type": "proxy",
+  "qualifier":"trafficmanager",
   "inboxes": {
-    "registry": "http://localhost:21180"
+    "agent": "http://tmgc-tm:21780",
+    "manager": "http://tmgc-cm:21180",
+    "registry":"http://tmgc-cass:21180"
   },
   "transportSettings": {
     "scheme": "http",
     "port": 21780
-  }
+  },
+  "components": [
+    {
+      "name": "TMG-Mashling",
+      "type": "microgateway",
+      "qualifier": "Mashling",
+      "script":"/Users/rpolishe/go/bin/mashling-gateway -c resources/mashling/runtime/rest-conditional-gateway.json",
+      "service": "MashliingContainerrService",
+      "factory": "com.mashery.tmgc.container.agent.mashling.MashlingComponentFactory"            
+    }   
+  ]
 }
