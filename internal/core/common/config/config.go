@@ -49,3 +49,14 @@ type ContainerInstance struct {
 	IP              string `json:"ip"`
 	RegistryContext string `json:"registryContext"`
 }
+
+func (mc *ManagedComponent) Clone(copyFrom ManagedComponent) {
+	mc.Name = copyFrom.Name
+	mc.Type = copyFrom.Type
+	mc.Qualifier = copyFrom.Qualifier
+	mc.Script = copyFrom.Script
+	mc.Service = copyFrom.Service
+	mc.Factory = copyFrom.Factory
+	// TODO
+	// mc.ContainerInstance = copyFrom.ContainerInstance
+}

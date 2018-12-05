@@ -3,6 +3,8 @@ package lifecycleservice
 import (
 	"github.com/rameshpolishetti/mlca/internal/core/common/config"
 	"github.com/rameshpolishetti/mlca/internal/core/component"
+	"github.com/rameshpolishetti/mlca/internal/core/component/lfa"
+	"github.com/rameshpolishetti/mlca/internal/core/component/mgw"
 	"github.com/rameshpolishetti/mlca/internal/core/service"
 	"github.com/rameshpolishetti/mlca/logger"
 )
@@ -30,8 +32,10 @@ func NewLifeCycleServices(cDaemon config.ContainerDaemon) LifeCycleServices {
 
 	for _, c := range cDaemon.Components {
 		var mc component.Component
-		if c.Type == "microgateway" {
-			mc = component.NewMicrogatewayComponent(c.Name)
+		if c.Type == "Microgateway" {
+			mc = mgw.NewMicrogatewayComponent(c)
+		} else if c.Type == "Log" {
+			mc = lfa.NewLFAComponent(c)
 		} else {
 			log.Panicf("managed component of type %s not found", c.Type)
 		}

@@ -1,5 +1,5 @@
 {
-  "name" : "myapp",
+  "name" : "microgateway",
   "domain" : "TIBCO",
   "cluster" : "Mashery Local 5",
   "zone": "Local Zone",
@@ -17,12 +17,20 @@
   },
   "components": [
     {
-      "name": "TMG-Mashling",
-      "type": "microgateway",
-      "qualifier": "Mashling",
-      "script":"/Users/rpolishe/go/bin/mashling-gateway -c resources/mashling/runtime/rest-conditional-gateway.json",
+      "name": "TMG-Microgateway",
+      "type": "Microgateway",
+      "qualifier": "microgateway",
+      "script":"/Users/rpolishe/go/bin/mashling-gateway -c gateway.json",
       "service": "MashliingContainerrService",
-      "factory": "com.mashery.tmgc.container.agent.mashling.MashlingComponentFactory"            
-    }   
+      "factory": "MashlingComponentFactory"            
+    },
+    {
+      "name": "TMG-LFA",
+      "type": "Log",
+      "qualifier": "lfa",
+      "script":"sleep 1000",
+      "service": "FluentBitService",
+      "factory": "FluentBitComponentFactory"            
+    } 
   ]
 }
