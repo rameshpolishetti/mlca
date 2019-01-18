@@ -17,8 +17,11 @@ type logFormatter struct {
 
 func (lf *logFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 
-	logEntry := fmt.Sprintf("[metadata={process='containeragent',function='containeragent',TMG_CLUSTER_NAME='%s',TMG_ZONE_NAME='%s',POD_IP='%s'}", os.Getenv("TMG_CLUSTER_NAME"), os.Getenv("TMG_ZONE_NAME"), os.Getenv("POD_IP")) + fmt.Sprintf("] %s %-5s [microgateway][%s] - %s\n", entry.Time.Format("2006-01-02 15:04:05.000"), getLevel(entry.Level), "test1234", entry.Message)
-
+	// logEntry := fmt.Sprintf("[metadata={process='containeragent',function='containeragent',TMG_CLUSTER_NAME='%s',TMG_ZONE_NAME='%s',POD_IP='%s'}", os.Getenv("TMG_CLUSTER_NAME"), os.Getenv("TMG_ZONE_NAME"), os.Getenv("POD_IP")) + fmt.Sprintf("] %s %-5s [microgateway][%s] - %s\n", entry.Time.Format("2006-01-02 15:04:05.000"), getLevel(entry.Level), "test1234", entry.Message)
+	
+	
+	logEntry := fmt.Sprintf("[metadata={process='containeragent',function='containeragent',TMG_CLUSTER_NAME='%s',TMG_ZONE_NAME='%s',POD_IP='%s'}", os.Getenv("TMG_CLUSTER_NAME"), os.Getenv("TMG_ZONE_NAME"), os.Getenv("POD_IP")) + fmt.Sprintf("] [%-5s] [microgateway] %s - %s\n",  getLevel(entry.Level), lf.name, entry.Message)
+	
 	return []byte(logEntry), nil
 }
 
