@@ -45,7 +45,7 @@ var startCmd = &cobra.Command{
 func run(cmd *cobra.Command, args []string) {
 
 	// load container configuration
-	var cConfig config.ContainerConfig
+	var cConfig config.ContainerDaemon
 	err := viper.Unmarshal(&cConfig)
 	if err != nil {
 		log.Errorf("unable to load container configuration")
@@ -63,5 +63,6 @@ func run(cmd *cobra.Command, args []string) {
 	log.Infof("Start the container [%s] with configuration: %s", cConfig.Name, cfgString)
 
 	ca := container.NewContainerAgent(cConfig)
+	ca.Initialize()
 	ca.Start()
 }

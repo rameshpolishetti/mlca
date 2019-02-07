@@ -14,10 +14,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/rameshpolishetti/mlca/internal/core/common/config"
-	"github.com/rameshpolishetti/mlca/internal/core/component"
 	"github.com/rameshpolishetti/mlca/internal/core/service"
-
-	"github.com/looplab/fsm"
+	"github.com/rameshpolishetti/mlca/internal/core/service/lifecycleservice"
 )
 
 var log = logger.GetLogger("cagent")
@@ -28,58 +26,32 @@ const (
 
 // ContainerAgent container agent
 type ContainerAgent struct {
-	Config     config.ContainerConfig
-	FSM        *fsm.FSM
-	Component  component.Component
-	RegService *service.RegistryProxy
+	containerDaemon   config.ContainerDaemon
+	RegService        *service.RegistryProxy
+	LifecycleServices lifecycleservice.LifeCycleServices
 }
 
 // NewContainerAgent creates new container agent
-func NewContainerAgent(cConfig config.ContainerConfig) *ContainerAgent {
+func NewContainerAgent(cDaemon config.ContainerDaemon) *ContainerAgent {
 
 	a := &ContainerAgent{
-		Config: cConfig,
+		containerDaemon: cDaemon,
 	}
 
-	/*
-	* UNKNOWN	initialize()	bootup()
-	* UNSATISFIED	resolveDependencies()	buildConfiguration()
-	* RESOLVED	activate()	launchComponent()
-	* STANDBY	standby()	prepareForActive()
-	* ACTIVE	monitor()	watchComponent()
-	* RELOAD	reload()
-	* RECYCLE	waitingForDependencies()
-	* DISABLED	deavtivate()
-	 */
-
-	a.FSM = fsm.NewFSM(
-		"UNKNOWN",
-		fsm.Events{
-			{Name: "initialize", Src: []string{"UNKNOWN"}, Dst: "UNSATISFIED"},
-			{Name: "resolveDependencies", Src: []string{"UNSATISFIED"}, Dst: "RESOLVED"},
-			{Name: "activate", Src: []string{"RESOLVED"}, Dst: "STANDBY"},
-			{Name: "standby", Src: []string{"STANDBY"}, Dst: "ACTIVE"},
-			{Name: "monitor", Src: []string{"ACTIVE"}, Dst: "ACTIVE"},
-			{Name: "deavtivate", Src: []string{"ACTIVE"}, Dst: "UNKNOWN"},
-		},
-		fsm.Callbacks{
-			"enter_state": func(e *fsm.Event) { a.enterState(e) },
-		},
-	)
-
-	// fmt.Println(fsm.Visualize(a.FSM))
-
-	// Init component
-	a.Component = component.NewMicrogatewayComponent(cConfig.Name)
-
 	// Init registry proxy service
-	a.RegService = service.NewRegistryProxyService(cConfig)
+	a.RegService = service.NewRegistryProxyService(cDaemon)
+
+	// load managed components
+
+	// init lifecycle services
+	a.LifecycleServices = lifecycleservice.NewLifeCycleServices(cDaemon)
 
 	return a
 }
 
-func (ca *ContainerAgent) enterState(e *fsm.Event) {
-	log.Infof("%s -> %s", e.Src, e.Dst)
+// Initialize initializes container agent
+func (ca *ContainerAgent) Initialize() {
+	// it it lifecycle service
 }
 
 // Start starts container agent
@@ -87,10 +59,10 @@ func (ca *ContainerAgent) Start() {
 
 	// start http server
 	router := mux.NewRouter()
-	pathStatus := fmt.Sprintf("/%s/status", ca.Config.Name)
+	pathStatus := fmt.Sprintf("/%s/status", ca.containerDaemon.Name)
 	router.HandleFunc(pathStatus, ca.getStatus).Methods("GET")
 	httpServer := &http.Server{
-		Addr:    fmt.Sprintf(":%v", ca.Config.TransportSettings.Port),
+		Addr:    fmt.Sprintf(":%v", ca.containerDaemon.TransportSettings.Port),
 		Handler: router,
 	}
 	go func() {
@@ -117,11 +89,14 @@ func (ca *ContainerAgent) Start() {
 			select {
 			case <-hearBeatTimer.C:
 				// switch state
-				if ca.switchState() {
-					// update registry with new state
-					ca.RegService.UpdateStatus(ca.FSM.Current())
-				} else {
-					log.Debugln("no state transition")
+				// if ca.switchState() {
+				// 	// update registry with new state
+				// 	ca.RegService.UpdateStatus(ca.FSM.Current())
+				// } else {
+				// 	log.Debugln("no state transition")
+				// }
+				if !ca.LifecycleServices.CheckState() {
+					log.Error("CheckState FAIL")
 				}
 
 			case <-signalChan:
@@ -130,7 +105,6 @@ func (ca *ContainerAgent) Start() {
 				// stop container agent
 				log.Infoln("Stop container agent")
 				hearBeatTimer.Stop()
-				ca.deavtivate()
 
 				// shutdown http server
 				log.Infoln("Shutting down http server")
@@ -146,126 +120,6 @@ func (ca *ContainerAgent) Start() {
 	os.Exit(code)
 }
 
-func (ca *ContainerAgent) switchState() bool {
-	if ca.FSM.Is("UNKNOWN") && ca.initialize() {
-		return true
-	}
-
-	if ca.FSM.Is("UNSATISFIED") && ca.resolveDependencies() {
-		return true
-	}
-
-	if ca.FSM.Is("RESOLVED") && ca.activate() {
-		return true
-	}
-
-	if ca.FSM.Is("STANDBY") && ca.standby() {
-		return true
-	}
-
-	if ca.FSM.Is("ACTIVE") && ca.monitor() {
-		return true
-	}
-
-	return false
-}
-
-func (ca *ContainerAgent) initialize() bool {
-	// init
-	// bootup() -> register -> ConfigurationRegistryService -> register()
-
-	// bootup component
-	if !ca.Component.Bootup() {
-		return false
-	}
-
-	// register
-	if ca.RegService.Register() {
-		log.Infoln("Registration SUCCESS")
-
-		// update state
-		err := ca.FSM.Event("initialize")
-		if err != nil {
-			log.Errorln(err)
-			return false
-		}
-		return true
-	}
-	log.Infoln("Registration FAIL")
-
-	return false
-}
-
-func (ca *ContainerAgent) resolveDependencies() bool {
-	// resolve
-	if !ca.Component.BuildConfiguration() {
-		return false
-	}
-
-	// update state
-	err := ca.FSM.Event("resolveDependencies")
-	if err != nil {
-		log.Errorln(err)
-		return false
-	}
-	return true
-}
-
-func (ca *ContainerAgent) activate() bool {
-	// activate
-	if !ca.Component.LaunchComponent() {
-		return false
-	}
-	// update state
-	err := ca.FSM.Event("activate")
-	if err != nil {
-		log.Errorln(err)
-		return false
-	}
-
-	return true
-}
-
-func (ca *ContainerAgent) standby() bool {
-	// standby
-	if !ca.Component.PrepareForActive() {
-		return false
-	}
-	// update state
-	err := ca.FSM.Event("standby")
-	if err != nil {
-		log.Errorln(err)
-		return false
-	}
-	return true
-}
-
-func (ca *ContainerAgent) monitor() bool {
-	// monitor
-	if !ca.Component.WatchComponent() {
-		return false
-	}
-	// update state
-	err := ca.FSM.Event("monitor")
-	if err != nil && err.Error() != "no transition" {
-		log.Errorln(err)
-		ca.FSM.SetState("RESOLVED")
-		return false
-	}
-	log.Infof("[monitor] Current state: %s", ca.FSM.Current())
-	return true
-}
-
-func (ca *ContainerAgent) deavtivate() bool {
-	// deavtivate
-	err := ca.FSM.Event("deavtivate")
-	if err != nil {
-		log.Errorln(err)
-		return false
-	}
-	return true
-}
-
 // ModelCA model container agent
 type ModelCA struct {
 	Name   string `json:"name"`
@@ -275,8 +129,8 @@ type ModelCA struct {
 // REST API
 func (ca *ContainerAgent) getStatus(w http.ResponseWriter, r *http.Request) {
 	mca := &ModelCA{
-		Name:   ca.Config.Name,
-		Status: ca.FSM.Current(),
+		Name:   ca.containerDaemon.Name,
+		Status: "UNKNOWN",
 	}
 
 	json.NewEncoder(w).Encode(mca)

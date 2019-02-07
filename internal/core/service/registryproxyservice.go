@@ -12,7 +12,7 @@ var log = logger.GetLogger("registry-service")
 
 // RegistryProxy rigistry
 type RegistryProxy struct {
-	cConfig    config.ContainerConfig
+	cConfig    config.ContainerDaemon
 	jsonClient *jsonclient.JSONClient
 
 	// registry status
@@ -25,7 +25,7 @@ type RegistryProxy struct {
 }
 
 // NewRegistryProxyService creates new registry proxy
-func NewRegistryProxyService(cCfg config.ContainerConfig) *RegistryProxy {
+func NewRegistryProxyService(cCfg config.ContainerDaemon) *RegistryProxy {
 	registry := cCfg.Inboxes["registry"]
 	registryContext := "/registry/rest/v1"
 	rp := &RegistryProxy{
@@ -43,13 +43,14 @@ func (rp *RegistryProxy) Register() bool {
 		return false
 	}
 
-	registerPath := "/clusters/" + rp.cConfig.Cluster + "/zones/" + rp.cConfig.Zone + "/" + rp.cConfig.Name
+	registerPath := "/clusters/" + rp.cConfig.Cluster + "/zones/" + rp.cConfig.Zone + "/" + rp.cConfig.ComponentType
 	log.Infoln("Registering")
 	/**
 	 * create registry payload
 	 * {
 	 * "name": "proxy-node1",
 	 * "host": "10.1.2.3",
+	 * "port": 9096,
 	 * "agentPort": 1234,
 	 * "status": "registering",
 	 * ... plus container specific arguments
@@ -58,6 +59,7 @@ func (rp *RegistryProxy) Register() bool {
 	payloadMap := map[string]interface{}{
 		"name":      rp.cConfig.Name,
 		"host":      rp.cConfig.IP,
+		"port":      rp.cConfig.Port,
 		"agentPort": rp.cConfig.TransportSettings.Port,
 		"status":    "registering",
 	}
@@ -154,7 +156,7 @@ func (rp *RegistryProxy) UpdateStatus(status string) bool {
 	*/
 	updateStatusPath := "/clusters/" + rp.clusterId +
 		"/zones/" + rp.zoneId +
-		"/" + rp.cConfig.Name + "/" + rp.tmgcId +
+		"/" + rp.cConfig.ComponentType + "/" + rp.tmgcId +
 		"/status"
 	log.Infoln("PUT request to: ", updateStatusPath)
 
