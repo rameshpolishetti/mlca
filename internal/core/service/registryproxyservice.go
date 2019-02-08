@@ -68,7 +68,7 @@ func (rp *RegistryProxy) Register() bool {
 	if err != nil {
 		return false
 	}
-	log.Infof("Response form registry: %s \n", res)
+	log.Infof("Response from registry: %s \n", res)
 	/* sample response
 	{
 		"registrationTime" : "11-317-18 15:46:53.914+0530",
