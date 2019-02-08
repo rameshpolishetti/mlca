@@ -43,13 +43,14 @@ func (rp *RegistryProxy) Register() bool {
 		return false
 	}
 
-	registerPath := "/clusters/" + rp.cConfig.Cluster + "/zones/" + rp.cConfig.Zone + "/" + rp.cConfig.Name
+	registerPath := "/clusters/" + rp.cConfig.Cluster + "/zones/" + rp.cConfig.Zone + "/" + rp.cConfig.ComponentType
 	log.Infoln("Registering")
 	/**
 	 * create registry payload
 	 * {
 	 * "name": "proxy-node1",
 	 * "host": "10.1.2.3",
+	 * "port": 9096,
 	 * "agentPort": 1234,
 	 * "status": "registering",
 	 * ... plus container specific arguments
@@ -58,6 +59,7 @@ func (rp *RegistryProxy) Register() bool {
 	payloadMap := map[string]interface{}{
 		"name":      rp.cConfig.Name,
 		"host":      rp.cConfig.IP,
+		"port":      rp.cConfig.Port,
 		"agentPort": rp.cConfig.TransportSettings.Port,
 		"status":    "registering",
 	}
@@ -66,7 +68,7 @@ func (rp *RegistryProxy) Register() bool {
 	if err != nil {
 		return false
 	}
-	log.Infof("Response form registry: %s \n", res)
+	log.Infof("Response from registry: %s \n", res)
 	/* sample response
 	{
 		"registrationTime" : "11-317-18 15:46:53.914+0530",
@@ -154,7 +156,7 @@ func (rp *RegistryProxy) UpdateStatus(status string) bool {
 	*/
 	updateStatusPath := "/clusters/" + rp.clusterId +
 		"/zones/" + rp.zoneId +
-		"/" + rp.cConfig.Name + "/" + rp.tmgcId +
+		"/" + rp.cConfig.ComponentType + "/" + rp.tmgcId +
 		"/status"
 	log.Infoln("PUT request to: ", updateStatusPath)
 

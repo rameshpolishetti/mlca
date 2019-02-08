@@ -3,10 +3,12 @@ package config
 // ContainerDaemon container configuration
 type ContainerDaemon struct {
 	Name              string             `json:"name"`
+	ComponentType     string             `json:"componentType"`
 	Domain            string             `json:"domain"`
 	Cluster           string             `json:"cluster"`
 	Zone              string             `json:"zone"`
 	Node              string             `json:"node"`
+	Port              string             `json:"port"`
 	Type              string             `json:"type"`
 	Qualifier         string             `json:"qualifier"`
 	Inboxes           map[string]string  `json:"inboxes"`

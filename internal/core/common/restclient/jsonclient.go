@@ -110,7 +110,9 @@ func (jsonClient *JSONClient) Put(path string, payloadMap map[string]interface{}
 		log.Errorf("PUT request to %s failed. Reason: %s", requestURL, err)
 		return nil, err
 	}
-
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("accept", "application/json")
+	
 	httpClient := getHTTPClient()
 	res, err := httpClient.Do(req)
 	if err != nil {

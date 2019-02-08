@@ -1,15 +1,17 @@
 {
-  "name" : "microgateway",
-  "domain" : "TIBCO",
-  "cluster" : "Mashery Local 5",
+  "componentType": "trafficmanagers",
+  "name": "mashling",
+  "domain": "TIBCO",
+  "cluster": "Mashery Local 5",
   "zone": "Local Zone",
-  "node" : "UNKNOWN",
+  "node": "UNKNOWN",
   "type": "proxy",
-  "qualifier":"trafficmanager",
+  "qualifier": "trafficmanager",
+  "port": 9096,
   "inboxes": {
     "agent": "http://tmgc-tm:21780",
     "manager": "http://tmgc-cm:21180",
-    "registry":"http://tmgc-cass:21180"
+    "registry": "http://tmgc-cass:21180"
   },
   "transportSettings": {
     "scheme": "http",
@@ -20,17 +22,17 @@
       "name": "TMG-Microgateway",
       "type": "Microgateway",
       "qualifier": "microgateway",
-      "script":"/Users/rpolishe/go/bin/mashling-gateway -c gateway.json",
+      "script": "mashling-gateway -c rest-conditional-gateway.json",
       "service": "MashliingContainerrService",
-      "factory": "MashlingComponentFactory"            
+      "factory": "MashlingComponentFactory"
     },
     {
       "name": "TMG-LFA",
       "type": "Log",
       "qualifier": "lfa",
-      "script":"sleep 1000",
+      "script": "startup_lfa.sh",
       "service": "FluentBitService",
-      "factory": "FluentBitComponentFactory"            
-    } 
+      "factory": "FluentBitComponentFactory"
+    }
   ]
 }
